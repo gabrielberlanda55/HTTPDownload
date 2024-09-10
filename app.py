@@ -106,6 +106,7 @@ def download():
     json = request.get_json()
 
     url = json.get('URL','VAZIO')
+    print("URL RECEBIDA: " + url)
 
     if url == 'VAZIO':
         return 'parâmetros incorretos', 422
