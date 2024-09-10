@@ -8,7 +8,7 @@ BUCKET_NAME = 'holdmaster.ytb.baixar'
 
 app = Flask(__name__)
 
-aws_acess_key = os.getenv('AWS_ACCESS_KEY_ID ')
+aws_acess_key = os.getenv('AWS_ACCESS_KEY_ID')
 aws_secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
 
 # Configurações da AWS S3
@@ -99,11 +99,17 @@ def delete_local_file(file_path):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return 'WS connected!'
 
 @app.route('/download', methods=['POST'])
 def download():
-    url = request.form['url']
+    json = request.get_json()
+
+    url = json.get('URL','VAZIO')
+
+    if url == 'VAZIO':
+        return 'parâmetros incorretos', 422
+
     try:
         temp_file_path, file_name = download_music_from_youtube(url)
 
@@ -115,9 +121,10 @@ def download():
 
         delete_local_file(temp_file_path)
 
-        return redirect(tempLinkdownload)
+        return tempLinkdownload,200
     except Exception as e:
         print(f"Erro: {e}")
+        return jsonify({"error": "Houve um erro ao processar o pedido."}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
