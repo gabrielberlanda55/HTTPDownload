@@ -2,7 +2,7 @@ import os
 import re
 import boto3
 import yt_dlp
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, request, jsonify
 
 BUCKET_NAME = 'holdmaster.ytb.baixar'
 
@@ -10,6 +10,8 @@ app = Flask(__name__)
 
 aws_acess_key = os.getenv('AWS_ACCESS_KEY_ID')
 aws_secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+yt_login = os.getenv('USERLOGIN')
+yt_password = os.getenv('USERPASSWORD')
 
 # Configurações da AWS S3
 s3 = boto3.client('s3', aws_access_key_id= aws_acess_key,
@@ -48,12 +50,13 @@ def download_music_from_youtube(youtube_url):
     # Configurações para baixar o áudio em formato MP3
     ydl_opts = {
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36',
+        'username' : yt_login,
+        'password' : yt_password,
         'format': 'bestaudio/best',
         'outtmpl': f'{temp_file_path}.%(ext)s',  # yt-dlp adiciona a extensão correta
         'sleep_interval': 10,  
         'max_sleep_interval': 30,
-        'verbose': True,
-        'cookiefile': 'cookies.txt', 
+        'verbose': True, 
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
