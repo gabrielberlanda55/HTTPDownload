@@ -38,6 +38,13 @@ def download_music_from_youtube(youtube_url):
     os.makedirs(temp_dir, exist_ok=True)  # Cria o diretório se ele não existir
     temp_file_path = os.path.join(temp_dir, f'{file_name}')  # Sem .mp3 aqui
 
+    try:
+        with open('cookie.txt', 'r') as file:
+            cookies = file.read()
+        print("Arquivo de cookies lido com sucesso")
+    except Exception as e:
+        print(f"Erro ao ler o arquivo de cookies: {e}")
+
     # Configurações para baixar o áudio em formato MP3
     ydl_opts = {
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36',
