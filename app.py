@@ -42,6 +42,8 @@ def download_music_from_youtube(youtube_url):
     ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': f'{temp_file_path}.%(ext)s',  # yt-dlp adiciona a extensão correta
+        'sleep_interval': 10,  
+        'max_sleep_interval': 30,
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
