@@ -105,8 +105,7 @@ def index():
 def download():
     json = request.get_json()
 
-    url = json.get('URL','VAZIO')
-    print("URL RECEBIDA: " + url)
+    url = json.get('url','VAZIO')
 
     if url == 'VAZIO':
         return 'parâmetros incorretos', 422
