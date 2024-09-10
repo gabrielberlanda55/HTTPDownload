@@ -45,6 +45,8 @@ def download_music_from_youtube(youtube_url):
         'outtmpl': f'{temp_file_path}.%(ext)s',  # yt-dlp adiciona a extensão correta
         'sleep_interval': 10,  
         'max_sleep_interval': 30,
+        'verbose': True,
+         'cookiefile': 'cookies.txt', 
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
