@@ -2,19 +2,21 @@ import os
 import re
 import boto3
 import yt_dlp
+from dotenv import load_dotenv 
 from flask import Flask, request, jsonify
 
-BUCKET_NAME = 'holdmaster.ytb.baixar'
 
 app = Flask(__name__)
 
+load_dotenv()
+
+BUCKET_NAME =  os.getenv('BUCKET')
 aws_acess_key = os.getenv('AWS_ACCESS_KEY_ID')
 aws_secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
 
 # Configurações da AWS S3
 s3 = boto3.client('s3', aws_access_key_id= aws_acess_key,
                   aws_secret_access_key= aws_secret_key)
-
 
 def sanitize_filename(title):
     # Remove caracteres especiais para criar um nome de arquivo válido
@@ -37,13 +39,6 @@ def download_music_from_youtube(youtube_url):
     temp_dir = get_temp_directory()
     os.makedirs(temp_dir, exist_ok=True)  # Cria o diretório se ele não existir
     temp_file_path = os.path.join(temp_dir, f'{file_name}')  # Sem .mp3 aqui
-
-    try:
-        with open('cookie.txt', 'r') as file:
-            cookies = file.read()
-        print("Arquivo de cookies lido com sucesso")
-    except Exception as e:
-        print(f"Erro ao ler o arquivo de cookies: {e}")
 
     # Configurações para baixar o áudio em formato MP3
     ydl_opts = {
