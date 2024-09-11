@@ -3,11 +3,15 @@ import re
 import boto3
 import yt_dlp
 from dotenv import load_dotenv 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, redirect, url_for, session, render_template
+import google.oauth2.credentials
+from google_auth_oauthlib.flow import InstalledAppFlow, Flow
+from google.auth.transport.requests import Request
+import pickle
 
-
-app = Flask(__name__)
-
+SCOPES = ['https://www.googleapis.com/auth/youtube.readonly']
+TOKEN_PICKLE = 'token.pickle'
+CREDENTIALS_JSON = 'credentials.json'
 load_dotenv()
 
 BUCKET_NAME =  os.getenv('BUCKET')
@@ -18,6 +22,15 @@ aws_secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
 s3 = boto3.client('s3', aws_access_key_id= aws_acess_key,
                   aws_secret_access_key= aws_secret_key)
 
+app = Flask(__name__)
+app.secret_key = os.urandom(24)
+
+flow = Flow.from_client_secrets_file(
+    CREDENTIALS_JSON,
+    scopes=SCOPES,
+    redirect_uri='https://18.228.204.151:8000/callback'  # Altere para o seu IP público ou domínio
+)
+
 def sanitize_filename(title):
     # Remove caracteres especiais para criar um nome de arquivo válido
     return re.sub(r'[\\/*?:"<>|]', "", title)
@@ -26,7 +39,7 @@ def get_temp_directory():
     # Verifica se uma variável de ambiente TEMP_DIR está configurada
     return os.getenv('TEMP_DIR', os.path.join(os.getcwd(), 'temp'))
 
-def download_music_from_youtube(youtube_url):
+def download_music_from_youtube(youtube_url, credentials):
     # Extrai informações do vídeo
     with yt_dlp.YoutubeDL() as ydl:
         info_dict = ydl.extract_info(youtube_url, download=False)
@@ -34,7 +47,7 @@ def download_music_from_youtube(youtube_url):
         
         # Sanitiza o título para ser usado como nome de arquivo
         file_name = sanitize_filename(title)
-    
+
     # Define o caminho para salvar o arquivo sem a extensão .mp3
     temp_dir = get_temp_directory()
     os.makedirs(temp_dir, exist_ok=True)  # Cria o diretório se ele não existir
@@ -42,8 +55,6 @@ def download_music_from_youtube(youtube_url):
 
     # Configurações para baixar o áudio em formato MP3
     ydl_opts = {
-        'username' : 'oauth2',
-        'password' : '',
         'format': 'bestaudio/best',
         'outtmpl': f'{temp_file_path}.%(ext)s',  # yt-dlp adiciona a extensão correta
         'sleep_interval': 10,  
@@ -54,6 +65,11 @@ def download_music_from_youtube(youtube_url):
             'preferredcodec': 'mp3',
             'preferredquality': '192',
         }],
+            'oauth2': {
+            'client_id': credentials.client_id,
+            'client_secret': credentials.client_secret,
+            'refresh_token': credentials.refresh_token
+        }
     }
     
     # Faz o download da música
@@ -102,11 +118,26 @@ def delete_local_file(file_path):
     else:
         print(f'O arquivo {file_path} não existe.')
 
-
-
 @app.route('/')
 def index():
-    return 'WS connected!'
+    return render_template('index.html')
+
+@app.route('/auth')
+def authorize():
+    authorization_url, state = flow.authorization_url()
+    session['state'] = state
+    return redirect(authorization_url)
+
+@app.route('/callback')
+def callback():
+    flow.fetch_token(authorization_response=request.url)
+
+    # Salva o token de credenciais
+    credentials = flow.credentials
+    with open(TOKEN_PICKLE, 'wb') as token_file:
+        pickle.dump(credentials, token_file)
+
+    return redirect(url_for('index'))
 
 @app.route('/download', methods=['POST'])
 def download():
@@ -116,9 +147,14 @@ def download():
 
     if url == 'VAZIO':
         return 'parâmetros incorretos', 422
+    
+    credentials = None
+    if os.path.exists(TOKEN_PICKLE):
+        with open(TOKEN_PICKLE, 'rb') as token_file:
+            credentials = pickle.load(token_file)
 
     try:
-        temp_file_path, file_name = download_music_from_youtube(url)
+        temp_file_path, file_name = download_music_from_youtube(url,credentials)
 
         s3_url = upload_to_s3(temp_file_path, f'musicas/{file_name}.mp3')
 

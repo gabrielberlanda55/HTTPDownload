@@ -164,4 +164,5 @@ cython_debug/
 #oAuth2
 credentials.json
 token.pickle
-oauth2.py
+
+*.old

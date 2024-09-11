@@ -9,6 +9,11 @@
 <body>
     <div class="container">
         <h1>Download Music from YouTube</h1>
+
+        <!-- Adicione um botão para iniciar o processo de autenticação OAuth -->
+        <a href="/auth" class="auth-button">Authenticate with Google</a>
+
+        <!-- Formulário de download -->
         <form action="/download" method="POST">
             <input type="text" name="url" placeholder="Enter YouTube URL" required>
             <button type="submit">Download</button>
