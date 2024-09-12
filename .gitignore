@@ -164,5 +164,8 @@ cython_debug/
 #oAuth2
 credentials.json
 token.pickle
+cert.pem
+key.pem
+nohup.out
 
 *.old
