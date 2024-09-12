@@ -28,7 +28,7 @@ app.secret_key = os.urandom(24)
 flow = Flow.from_client_secrets_file(
     CREDENTIALS_JSON,
     scopes=SCOPES,
-    redirect_uri='https://18.228.204.151:8000/callback'  # Altere para o seu IP público ou domínio
+    redirect_uri='http://downloadybmaster.ddns.net:8000/callback'  # Altere para o seu IP público ou domínio
 )
 
 def sanitize_filename(title):
