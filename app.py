@@ -141,9 +141,9 @@ def callback():
 
 @app.route('/download', methods=['POST'])
 def download():
-    json = request.get_json()
-
-    url = json.get('url','VAZIO')
+    #json = request.get_json()
+    url = request.form.get('url')
+    #url = json.get('url','VAZIO')
 
     if url == 'VAZIO':
         return 'parâmetros incorretos', 422
