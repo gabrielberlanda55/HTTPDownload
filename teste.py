@@ -62,15 +62,12 @@ class DownloadMusicasYT:
     def DownloadYoutubeMusic(self):
 
         ydl_opts = {
-                    'ignoreerrors': 'True',
-                    'format': 'bestaudio/best',
-                    'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '320',
-                    }],
-                    'outtmpl': self.diretorio + '%(title)s.%(ext)s',  # Nome do arquivo de saída
-                    }
+            'format': 'bestaudio/best',
+            'outtmpl': '%(title)s.%(ext)s',
+            'headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36',
+            },
+        }
         
         # Cria uma instância da classe YoutubeDL
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
