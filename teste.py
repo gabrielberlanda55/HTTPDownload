@@ -81,7 +81,7 @@ class DownloadMusicasYT:
         #self.DownloadYoutube()
             
 diretorio = ""
-link = "https://www.youtube.com/watch?v=CnsJW5KkxcQ"
+link = "https://music.youtube.com/watch?v=AHgQtCAUwjE&si=cMXEr9VA68MO9Ao8"
 log = ""
 YTDownload = DownloadMusicasYT(diretorio=diretorio,link=link,log=log)
 YTDownload.Download()
