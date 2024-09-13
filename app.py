@@ -53,6 +53,10 @@ def download_music_from_youtube(youtube_url, credentials):
     os.makedirs(temp_dir, exist_ok=True)  # Cria o diretório se ele não existir
     temp_file_path = os.path.join(temp_dir, f'{file_name}')  # Sem .mp3 aqui
 
+    print(credentials.client_id)
+    print(credentials.client_secret)
+    print(credentials.refresh_token)
+    
     # Configurações para baixar o áudio em formato MP3
     ydl_opts = {
         'format': 'bestaudio/best',
