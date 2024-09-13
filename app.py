@@ -8,6 +8,7 @@ import google.oauth2.credentials
 from google_auth_oauthlib.flow import InstalledAppFlow, Flow
 from google.auth.transport.requests import Request
 import pickle
+import logging
 
 SCOPES = ['https://www.googleapis.com/auth/youtube.readonly']
 TOKEN_PICKLE = 'token.pickle'
@@ -22,8 +23,15 @@ aws_secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
 s3 = boto3.client('s3', aws_access_key_id= aws_acess_key,
                   aws_secret_access_key= aws_secret_key)
 
+logging.basicConfig(level=logging.DEBUG)
+
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+
 
 flow = Flow.from_client_secrets_file(
     CREDENTIALS_JSON,
@@ -56,7 +64,7 @@ def download_music_from_youtube(youtube_url, credentials):
     print(credentials.client_id)
     print(credentials.client_secret)
     print(credentials.refresh_token)
-    
+
     # Configurações para baixar o áudio em formato MP3
     ydl_opts = {
         'format': 'bestaudio/best',
@@ -140,6 +148,10 @@ def callback():
     credentials = flow.credentials
     with open(TOKEN_PICKLE, 'wb') as token_file:
         pickle.dump(credentials, token_file)
+    
+    logger.debug(f'Client ID: {credentials.client_id}')
+    logger.debug(f'Client Secret: {credentials.client_secret}')
+    logger.debug(f'Refresh Token: {credentials.refresh_token}')
 
     return redirect(url_for('index'))
 
