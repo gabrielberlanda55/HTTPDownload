@@ -4,15 +4,8 @@ import boto3
 import yt_dlp
 from dotenv import load_dotenv 
 from flask import Flask, request, jsonify, redirect, url_for, session, render_template
-import google.oauth2.credentials
-from google_auth_oauthlib.flow import InstalledAppFlow, Flow
-from google.auth.transport.requests import Request
-import pickle
 import logging
 
-SCOPES = ['https://www.googleapis.com/auth/youtube.readonly']
-TOKEN_PICKLE = 'token.pickle'
-CREDENTIALS_JSON = 'credentials.json'
 load_dotenv()
 
 BUCKET_NAME =  os.getenv('BUCKET')
@@ -26,18 +19,10 @@ s3 = boto3.client('s3', aws_access_key_id= aws_acess_key,
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-
-
-flow = Flow.from_client_secrets_file(
-    CREDENTIALS_JSON,
-    scopes=SCOPES,
-    redirect_uri='https://downloadybmaster.ddns.net/callback'  # Altere para o seu IP público ou domínio
-)
 
 def sanitize_filename(title):
     # Remove caracteres especiais para criar um nome de arquivo válido
@@ -47,7 +32,7 @@ def get_temp_directory():
     # Verifica se uma variável de ambiente TEMP_DIR está configurada
     return os.getenv('TEMP_DIR', os.path.join(os.getcwd(), 'temp'))
 
-def download_music_from_youtube(youtube_url, credentials):
+def download_music_from_youtube(youtube_url):
     # Extrai informações do vídeo
     with yt_dlp.YoutubeDL() as ydl:
         info_dict = ydl.extract_info(youtube_url, download=False)
@@ -56,32 +41,19 @@ def download_music_from_youtube(youtube_url, credentials):
         # Sanitiza o título para ser usado como nome de arquivo
         file_name = sanitize_filename(title)
 
-    # Define o caminho para salvar o arquivo sem a extensão .mp3
     temp_dir = get_temp_directory()
-    os.makedirs(temp_dir, exist_ok=True)  # Cria o diretório se ele não existir
-    temp_file_path = os.path.join(temp_dir, f'{file_name}')  # Sem .mp3 aqui
+    os.makedirs(temp_dir, exist_ok=True)  
+    temp_file_path = os.path.join(temp_dir, f'{file_name}')  
 
-    print(credentials.client_id)
-    print(credentials.client_secret)
-    print(credentials.refresh_token)
-
-    # Configurações para baixar o áudio em formato MP3
     ydl_opts = {
         'format': 'bestaudio/best',
-        'outtmpl': f'{temp_file_path}.%(ext)s',  # yt-dlp adiciona a extensão correta
-        'sleep_interval': 10,  
-        'max_sleep_interval': 30,
+        'outtmpl': f'{temp_file_path}.%(ext)s', 
         'verbose': True, 
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
             'preferredquality': '192',
-        }],
-            'oauth2': {
-            'client_id': credentials.client_id,
-            'client_secret': credentials.client_secret,
-            'refresh_token': credentials.refresh_token
-        }
+        }]
     }
     
     # Faz o download da música
@@ -134,27 +106,6 @@ def delete_local_file(file_path):
 def index():
     return render_template('index.html')
 
-@app.route('/auth')
-def authorize():
-    authorization_url, state = flow.authorization_url()
-    session['state'] = state
-    return redirect(authorization_url)
-
-@app.route('/callback')
-def callback():
-    flow.fetch_token(authorization_response=request.url)
-
-    # Salva o token de credenciais
-    credentials = flow.credentials
-    with open(TOKEN_PICKLE, 'wb') as token_file:
-        pickle.dump(credentials, token_file)
-    
-    logger.debug(f'Client ID: {credentials.client_id}')
-    logger.debug(f'Client Secret: {credentials.client_secret}')
-    logger.debug(f'Refresh Token: {credentials.refresh_token}')
-
-    return redirect(url_for('index'))
-
 @app.route('/download', methods=['POST'])
 def download():
     #json = request.get_json()
@@ -163,14 +114,9 @@ def download():
 
     if url == 'VAZIO':
         return 'parâmetros incorretos', 422
-    
-    credentials = None
-    if os.path.exists(TOKEN_PICKLE):
-        with open(TOKEN_PICKLE, 'rb') as token_file:
-            credentials = pickle.load(token_file)
 
     try:
-        temp_file_path, file_name = download_music_from_youtube(url,credentials)
+        temp_file_path, file_name = download_music_from_youtube(url)
 
         s3_url = upload_to_s3(temp_file_path, f'musicas/{file_name}.mp3')
 
@@ -180,7 +126,7 @@ def download():
 
         delete_local_file(temp_file_path)
 
-        return tempLinkdownload,200
+        return redirect(tempLinkdownload),200
     except Exception as e:
         print(f"Erro: {e}")
         return jsonify({"error": "Houve um erro ao processar o pedido."}), 500
